@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BotConfig",
+  "type": "object",
+  "required": [
+    "categorizePrompt",
+    "endpoints",
+    "fallbackEndpoint",
+    "helpPrompt",
+    "macros",
+    "messageHistory",
+    "props",
+    "providers",
+    "responses"
+  ],
+  "properties": {
+    "categorizePrompt": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "endpoints": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ConfigEndpoint"
+      }
+    },
+    "fallbackEndpoint": {
+      "type": "string"
+    },
+    "helpPrompt": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "macros": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "messageHistory": {
+      "type": "integer",
+      "format": "uint",
+      "minimum": 0.0
+    },
+    "props": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "providers": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ConfigProvider"
+      }
+    },
+    "responses": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ConfigResponse"
+      }
+    }
+  },
+  "definitions": {
+    "ConfigEndpoint": {
+      "type": "object",
+      "required": [
+        "categorization",
+        "designation",
+        "icon",
+        "id",
+        "task"
+      ],
+      "properties": {
+        "categorization": {
+          "type": "string"
+        },
+        "designation": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string",
+          "maxLength": 1,
+          "minLength": 1
+        },
+        "id": {
+          "type": "string"
+        },
+        "task": {
+          "type": "string"
+        }
+      }
+    },
+    "ConfigProvider": {
+      "type": "object",
+      "required": [
+        "props",
+        "provider"
+      ],
+      "properties": {
+        "args": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "props": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "provider": {
+          "type": "string"
+        },
+        "transform": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ConfigResponse": {
+      "type": "object",
+      "required": [
+        "prompt"
+      ],
+      "properties": {
+        "args": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "footer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "prompt": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "transform": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

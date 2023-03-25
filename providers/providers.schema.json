@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Provider",
+  "type": "object",
+  "required": [
+    "propRules",
+    "url"
+  ],
+  "properties": {
+    "body": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "env": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "headers": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "propRules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/PropRule"
+      }
+    },
+    "query": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "url": {
+      "type": "string"
+    }
+  },
+  "definitions": {
+    "PropRule": {
+      "type": "object",
+      "required": [
+        "props",
+        "redirect",
+        "required"
+      ],
+      "properties": {
+        "props": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "redirect": {
+          "$ref": "#/definitions/Redirect"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Redirect": {
+      "type": "string",
+      "enum": [
+        "query",
+        "body",
+        "headers"
+      ]
+    }
+  }
+}

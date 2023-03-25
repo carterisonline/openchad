@@ -1,4 +1,5 @@
 {
+    "$schema": "./providers.schema.json",
     "url": "https://api.bing.microsoft.com/v7.0/search",
     "env": [
         "OCP_APIM_SUBSCRIPTION_KEY"
