@@ -1,0 +1,36 @@
+{
+    "url": "https://api.bing.microsoft.com/v7.0/search",
+    "env": [
+        "OCP_APIM_SUBSCRIPTION_KEY"
+    ],
+    "propRules": [
+        {
+            "required": false,
+            "redirect": "query",
+            "props": [
+                "answerCount",
+                "cc",
+                "count",
+                "freshness",
+                "mkt",
+                "offset",
+                "promote",
+                "responseFilter",
+                "safeSearch",
+                "setLang",
+                "textDecorations",
+                "textFormat"
+            ]
+        },
+        {
+            "required": true,
+            "redirect": "query",
+            "props": [
+                "q"
+            ]
+        }
+    ],
+    "headers": {
+        "Ocp-Apim-Subscription-Key": "{{ env.OCP_APIM_SUBSCRIPTION_KEY }}"
+    }
+}
