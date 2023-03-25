@@ -1,5 +1,5 @@
 use architectury::prelude::*;
-use openchad_common::search::*;
+use openchad_schemas::search::*;
 use std::env::var;
 
 pub async fn search(query: String, options: SearchQueryOptions) -> Result<SearchResponse> {

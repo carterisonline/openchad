@@ -28,7 +28,7 @@ sqlx = { version = "0.6", features = [
 tokio = { version = "1", features = ["full"] }
 tokio-util = "0.7"
 tracing = "0.1"
-openchad-common = { path = "../common" }
+openchad-schemas = { path = "../schemas" }
 minijinja = "0.30.7"
 tap = "1.0.1"
 async-recursion = "1.0.4"

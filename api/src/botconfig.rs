@@ -3,7 +3,7 @@ macro_rules! append_to_history {
         append_history(
             &$pool.clone(),
             $body.user.clone(),
-            openchad_common::chat::ChatMessage {
+            openchad_schemas::chat::ChatMessage {
                 role: "user".into(),
                 content: $body.message,
             },
@@ -30,12 +30,12 @@ use eyre::Context;
 use eyre::{eyre, ErrReport};
 use futures::{pin_mut, Stream, StreamExt, TryStreamExt};
 use minijinja::Environment;
-use openchad_common::botconfig::{
+use openchad_schemas::botconfig::{
     BotConfig, BotConfigHeadless, ConfigMacro, ConfigResponse, ConfigSearchQuery, Transform,
 };
-use openchad_common::chat::ChatMessage;
-use openchad_common::search::SearchResponse;
-use openchad_common::{CategorizeBody, CategorizeResponse, ChatBody};
+use openchad_schemas::chat::ChatMessage;
+use openchad_schemas::search::SearchResponse;
+use openchad_schemas::{CategorizeBody, CategorizeResponse, ChatBody};
 use serde::Serialize;
 use serde_json::Value;
 use sqlx::{Row, SqlitePool};

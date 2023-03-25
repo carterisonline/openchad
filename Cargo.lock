@@ -1279,7 +1279,7 @@ dependencies = [
  "architectury",
  "chrono",
  "once_cell",
- "openchad-common",
+ "openchad-schemas",
  "reqwest",
  "reqwest-streams",
  "serde",
@@ -1304,7 +1304,7 @@ dependencies = [
  "futures-util",
  "minijinja",
  "once_cell",
- "openchad-common",
+ "openchad-schemas",
  "reqwest",
  "reqwest-streams",
  "serde",
@@ -1317,7 +1317,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "openchad-common"
+name = "openchad-schemas"
 version = "0.1.0"
 dependencies = [
  "architectury",

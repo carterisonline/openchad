@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use architectury::prelude::*;
 use futures::prelude::*;
-use openchad_common::botconfig::BotConfig;
-use openchad_common::chat::{ChatMessage, ChatResponseStream};
+use openchad_schemas::botconfig::BotConfig;
+use openchad_schemas::chat::{ChatMessage, ChatResponseStream};
 use serde_json::json;
 use tokio::io::AsyncBufReadExt;
 use tokio_util::io::StreamReader;
