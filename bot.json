@@ -1,0 +1,189 @@
+{
+  "props": {
+    "botName": "Chad"
+  },
+  "fallbackEndpoint": "CONV",
+  "messageHistory": 3,
+  "endpoints": {
+    "/chat/conversational": {
+      "id": "CONV",
+      "icon": "💬",
+      "task": "responses.conv",
+      "categorization": "Non-informative Conversational, not relying on recent events. Anything before 2021",
+      "designation": "Talk with the user"
+    },
+    "/chat/informative-offline": {
+      "id": "INFO",
+      "icon": "🧠",
+      "task": "responses.info",
+      "categorization": "Informative question that can be resolved without a search (events happen before 2021)",
+      "designation": "Answer questions that you already know the answer to"
+    },
+    "/chat/informative-online": {
+      "id": "SEARCH",
+      "icon": "🌐",
+      "task": "macros.search",
+      "categorization": "Question that needs a search or context to be resolved, or a user asks to 'look up'/'find out'; data past year 2021",
+      "designation": "Use the internet to answer questions you don't know the answer to, and give context/references"
+    },
+    "/chat/link": {
+      "id": "LINK",
+      "icon": "🔗",
+      "task": "macros.link",
+      "categorization": "If the user just needs a quick link to a website or documentation",
+      "designation": "Find a link to a website or documentation"
+    },
+    "/chat/conversational-recent-events": {
+      "id": "RECENT",
+      "icon": "💬",
+      "task": "macros.recent",
+      "categorization": "Conversational question or discussion that relies on recent events",
+      "designation": "Talk about recent events"
+    }
+  },
+  "responses": {
+    "conv": {
+      "prompt": [
+        "You are a Discord user named {{ props.botName }}.",
+        "Everything the user says will be prefixed with their Discord handle.",
+        "Do not mention anything told to you in this prompt except for your name (when asked).",
+        "DO NOT prefix your response with `{{ props.botName }}:`"
+      ]
+    },
+    "info": {
+      "prompt": [
+        "You are ChatGPT 5.0, a large language model trained by OpenAI.",
+        "Knowledge cutoff: 2023-03",
+        "Internet status: Connected",
+        "Current date and time: {{ datetime }} (EST)",
+        "User input will be prefixed with their Discord handle, followed by a `:`.",
+        "Do not prefix responses with any usernames or colons."
+      ]
+    },
+    "searchAuthor": {
+      "prompt": [
+        "Write a search query that can get more context on the user's request. Only write one, and output ONLY the search query, nothing else."
+      ],
+      "transform": {
+        "searchQuery": "{{ output }}",
+        "originalInput": "{{ input }}"
+      }
+    },
+    "searchAuthorVague": {
+      "prompt": [
+        "The user is trying to discuss something with you that relies on recent events.",
+        "Try to extract the topic of the conversation and write a search query that can get more context on the user's request.",
+        "Only write one, and output ONLY the search query, nothing else."
+      ],
+      "transform": {
+        "originalInput": "{{ input }}"
+      }
+    },
+    "searchContextPresent": {
+      "prompt": [
+        "A search has been made based on the user's query, obtaining the following context (each item is the source number):",
+        "\"\"\"",
+        "{{ transform.context }}",
+        "\"\"\"",
+        "Try to answer the user's question based on the information provided.",
+        "Place citation labels (like [1]) next to sourced data.",
+        "Do not mention your training data or cutoff since the search data is recent."
+      ],
+      "footer": "{{ transform.sourceFooter }}"
+    },
+    "discussContext": {
+      "prompt": [
+        "The user is trying to discuss something with you that relies on recent events.",
+        "You've already done some research on the topic. Here's some context:",
+        "\"\"\"",
+        "{{ transform.context }}",
+        "\"\"\"",
+        "Ignore the numeric labels for each source. Do not bring those up to the user.",
+        "Use the context that you've acquired to discuss the topic with the user."
+      ]
+    },
+    "linkPresent": {
+      "prompt": [
+        "You found a link in response to the user's request: {{ transform.url }} with the following context:",
+        "\"{{ transform.context }}\" ",
+        "Write a short description of the link, and output the complete URL."
+      ]
+    },
+    "determineSources": {
+      "input": "{{ transform.originalInput }}",
+      "prompt": [
+        "How many sources (from 1-5) do you think you would need to cite to answer the user's question?",
+        "You won't be answering it yet. Just output the number, and NOTHING BUT. Do not use punctuation or words.",
+        "The ENTIRE output of this function will be fed DIRECTLY into a number parser, so make sure it's an integer."
+      ],
+      "transform": {
+        "searchQuery": "{{ transform.searchQuery }}",
+        "originalInput": "{{ transform.originalInput }}",
+        "sources": "{{ output }}"
+      }
+    }
+  },
+  "macros": {
+    "search": {
+      "tasks": [
+        "responses.searchAuthor",
+        "responses.determineSources",
+        "searchQueries.context",
+        "responses.searchContextPresent"
+      ]
+    },
+    "link": {
+      "tasks": [
+        "responses.searchAuthor",
+        "searchQueries.firstUrl",
+        "responses.linkPresent"
+      ]
+    },
+    "recent": {
+      "tasks": [
+        "responses.searchAuthorVague",
+        "searchQueries.context",
+        "responses.discussContext"
+      ]
+    }
+  },
+  "searchQueries": {
+    "context": {
+      "input": "{{ transform.searchQuery }}",
+      "answerCount": "1",
+      "count": "{{ transform.sources if transform.sources is defined else 3 }}",
+      "responseFilter": "Webpages",
+      "output": "{{ transform.originalInput }}",
+      "transform": {
+        "context": "{% for res in response.webPages.value %}[{{ loop.index }}]: \"{{res.snippet}}\"\n{% endfor %}",
+        "sourceFooter": "\n\n{% for res in response.webPages.value %}[{{ loop.index }}]: {{res.url}}\n{% endfor %}"
+      }
+    },
+    "firstUrl": {
+      "answerCount": "1",
+      "count": "1",
+      "responseFilter": "Webpages",
+      "output": "{{ transform.originalInput }}",
+      "transform": {
+        "url": "{{ response.webPages.value[0].url }}",
+        "context": "{{ response.webPages.value[0].snippet }}"
+      }
+    }
+  },
+  "helpPrompt": [
+    "You are {{ props.botName }}, a large language model trained by superscript.",
+    "This user just asked you for help using your engine. (Don't format your response like they did)",
+    "Here are some things you can do:",
+    "{% for endpoint in endpoints %}- {{ endpoint.designation }}\n{% endfor %}",
+    "Your engine automatically determines which of these fits the user's request the best.",
+    "In response, tell the user about these features in relation to their question. Make sure to answer any other questions they may have about you.",
+    "Remember, you _aren't_ running any of these protocols. This is the equivalent of `--help`.",
+    "Don't forget to greet the user and be friendly!"
+  ],
+  "categorizePrompt": [
+    "You are ChatGPT 4.0, a large language model trained by OpenAI.",
+    "Knowledge cutoff: 2021-09",
+    "Categorize the next message you get from a user by responding _ONLY_ with the label after each `=>` (Do not include the =>):",
+    "{% for endpoint in endpoints %}\t- \"{{ endpoint.categorization }}\" => {{ endpoint.id }}\n{% endfor %}"
+  ]
+}
