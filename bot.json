@@ -11,21 +11,21 @@
       "icon": "💬",
       "task": "responses.conversation",
       "categorization": "Non-informative Conversational, not relying on recent events. Anything before 2021",
-      "designation": "Talk with the user"
+      "designation": "Talk about whatever"
     },
     "/chat/informative-offline": {
       "id": "INFO",
       "icon": "🧠",
       "task": "responses.rationalize",
       "categorization": "Informative question that can be resolved without a search (events happen before 2021)",
-      "designation": "Answer questions that you already know the answer to"
+      "designation": "Answer logical and historical questions"
     },
     "/chat/informative-online": {
       "id": "SEARCH",
       "icon": "🌐",
       "task": "macros.searchAndPresentContext",
       "categorization": "Question that needs a search or context to be resolved, or a user asks to 'look up'/'find out'; data past year 2021",
-      "designation": "Use the internet to answer questions you don't know the answer to, and give context/references"
+      "designation": "Answer questions with context/references using the internet"
     },
     "/chat/link": {
       "id": "LINK",
@@ -40,6 +40,13 @@
       "task": "macros.conversationRecentEvents",
       "categorization": "Conversational question or discussion that relies on recent events",
       "designation": "Talk about recent events"
+    },
+    "/chat/location-lookup": {
+      "id": "LOCATION",
+      "icon": "🌎",
+      "task": "macros.locationLookup",
+      "categorization": "Info about a store, business location, or info about a place near them (\"find me a place\")",
+      "designation": "Find details on a store, business or location"
     }
   },
   "responses": {
@@ -64,7 +71,10 @@
     "writeQuery": {
       "prompt": [
         "Write a search query that can get more context on the user's request. Only write one, and output ONLY the search query, nothing else."
-      ]
+      ],
+      "transform": {
+        "query": "{{ trim(output, '\"') }}"
+      }
     },
     "writeQueryConversation": {
       "prompt": [
@@ -73,11 +83,17 @@
         "Only write one, and output ONLY the search query, nothing else."
       ]
     },
-    "presentContext": {
-      "args": [
-        "context",
-        "sourceFooter"
+    "writeQueryLocation": {
+      "prompt": [
+        "The user is asking for a store, business or location. Write a search query that finds what they're looking for.",
+        "Don't include requests for properties like 'phone number' or 'address' in the query.",
+        "Only write one, and output ONLY the search query, nothing else."
       ],
+      "transform": {
+        "query": "{{ trim(output, '\"') }}"
+      }
+    },
+    "presentContext": {
       "prompt": [
         "A search has been made based on the user's query, obtaining the following context (each item is the source number):",
         "\"\"\"",
@@ -90,9 +106,6 @@
       "footer": "{{ args.sourceFooter }}"
     },
     "discussContext": {
-      "args": [
-        "context"
-      ],
       "prompt": [
         "The user is trying to discuss something with you that relies on recent events.",
         "You've already done some research on the topic. Here's some context:",
@@ -104,10 +117,6 @@
       ]
     },
     "presentLink": {
-      "args": [
-        "url",
-        "context"
-      ],
       "prompt": [
         "You found a link in response to the user's request: {{ args.url }} with the following context:",
         "\"{{ args.context }}\" ",
@@ -120,6 +129,17 @@
         "You won't be answering it yet. Just output the number, and NOTHING BUT. Do not use punctuation or words.",
         "The ENTIRE output of this function will be fed DIRECTLY into a number parser, so make sure it's an integer."
       ]
+    },
+    "presentLocation": {
+      "prompt": [
+        "You found a location in response to the user's request. Here's some information about it:",
+        "URL: {{ args.url }}",
+        "Name: {{ args.name }}",
+        "Business Type: {{ args.type }}",
+        "Phone #: {{ args.phone }}",
+        "City: {{ args.city }}",
+        "Try to answer the user's question based on the information provided."
+      ]
     }
   },
   "macros": {
@@ -127,7 +147,7 @@
       "responses.writeQuery": {},
       "responses.determineQuerySources": {},
       "providers.searchContext": {
-        "input": "{{ macro.stage.responses.searchAuthor.output }}",
+        "input": "{{ transform.query }}",
         "sourceCount": "{{ input }}"
       },
       "responses.presentContext": {
@@ -153,13 +173,24 @@
       "responses.discussContext": {
         "context": "{{ transform.context }}"
       }
+    },
+    "locationLookup": {
+      "responses.writeQueryLocation": {},
+      "providers.searchLocation": {
+        "query": "{{ transform.query }}"
+      },
+      "responses.presentLocation": {
+        "input": "{{ macro.input }}",
+        "url": "{{ transform.url }}",
+        "name": "{{ transform.name }}",
+        "type": "{{ transform._type }}",
+        "telephone": "{{ transform.telephone }}",
+        "city": "{{ transform.city }}"
+      }
     }
   },
   "providers": {
     "searchContext": {
-      "args": [
-        "sourceCount"
-      ],
       "provider": "bing",
       "props": {
         "answerCount": "1",
@@ -168,8 +199,8 @@
         "q": "{{ input }}"
       },
       "transform": {
-        "context": "{% for res in response['webPages']['value'] %}[{{ loop.index }}]: \"{{res['snippet']}}\"\n{% endfor %}",
-        "sourceFooter": "\n\n{% for res in response['webPages']['value'] %}[{{ loop.index }}]: {{res['url']}}\n{% endfor %}"
+        "context": "{% for res in response.webPages.value %}[{{ loop.index }}]: \"{{ res.snippet }}\"\n{% endfor %}",
+        "sourceFooter": "\n\n{% for res in response.webPages.value %}[{{ loop.index }}]: {{ res.url }}\n{% endfor %}"
       }
     },
     "searchFirstUrl": {
@@ -181,8 +212,23 @@
         "q": "{{ args.query }}"
       },
       "transform": {
-        "url": "{{ response['webPages']['value'][0]['url'] }}",
-        "context": "{{ response['webPages']['value'][0]['snippet'] }}"
+        "url": "{{ response.webPages.value[0].url }}",
+        "context": "{{ response.webPages.value[0].snippet }}"
+      }
+    },
+    "searchLocation": {
+      "provider": "bing",
+      "props": {
+        "count": "1",
+        "responseFilter": "Places",
+        "q": "{{ args.query }}"
+      },
+      "transform": {
+        "url": "{{ response.places.value[0].url }}",
+        "name": "{{ response.places.value[0].name }}",
+        "type": "{{ response.places.value[0].type }}",
+        "telephone": "{{ response.places.value[0].telephone }}",
+        "city": "{{ response.places.value[0].address.addressLocality }}"
       }
     }
   },

@@ -67,6 +67,31 @@ pub mod tests {
     }
 
     #[test]
+    fn macros_always_in_order() -> Result<()> {
+        use architectury::prelude::assert_eq;
+        for _ in 0..5 {
+            let parsed_cfg = serde_json::from_str::<BotConfig>(&cat("../bot.json")?)?;
+
+            assert_eq!(
+                parsed_cfg
+                    .macros
+                    .get("searchAndPresentContext")
+                    .unwrap()
+                    .keys()
+                    .collect::<Vec<_>>(),
+                &[
+                    "responses.writeQuery",
+                    "responses.determineQuerySources",
+                    "providers.searchContext",
+                    "responses.presentContext"
+                ]
+            );
+        }
+
+        Ok(())
+    }
+
+    #[test]
     fn parse_provider_json() -> Result<()> {
         let parsed_cfg = serde_json::from_str::<Provider>(&cat("../providers/bing.json")?);
         dbg!(&parsed_cfg);

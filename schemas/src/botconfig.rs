@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use indexmap::IndexMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -52,21 +53,19 @@ pub struct ConfigEndpoint {
 #[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigResponse {
-    pub args: Option<Vec<String>>,
     pub prompt: Vec<String>,          // Template
     pub transform: Option<Transform>, // Template
     pub footer: Option<String>,       // Template
 }
 
-type ConfigMacro = HashMap<String, HashMap<String, String>>;
+pub type ConfigMacro = IndexMap<String, HashMap<String, String>>;
 
 #[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigProvider {
-    pub args: Option<Vec<String>>,
     pub provider: String,
     pub props: HashMap<String, String>,
-    pub transform: Option<Transform>,
+    pub transform: Transform,
 }
 
 config! {

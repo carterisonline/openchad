@@ -12,7 +12,11 @@ use openchad_schemas::botconfig::BotConfig;
 use openchad_schemas::{CategorizeBody, CategorizeResponse, ChatBody, HistoryBody};
 use reqwest_streams::JsonStreamResponse;
 use serenity::futures::StreamExt;
-use serenity::model::prelude::*;
+use serenity::model::application::interaction::{
+    Interaction, InteractionResponseType, MessageFlags,
+};
+use serenity::model::prelude::command::{Command, CommandOptionType};
+use serenity::model::prelude::{Activity, Message, Ready};
 use serenity::{async_trait, prelude::*};
 use tap::Tap;
 use tokio::spawn;
@@ -114,19 +118,13 @@ impl EventHandler for Handler {
                     .await
                 {
                     response.json_nl_stream::<String>(1024)
-                    // if let Ok(j) = response.into_json() {
-                    //     j
-                    // } else {
-                    //     category_reaction_handle.delete(&context).await.unwrap();
-                    //     retries += 1;
-                    //     continue 'retry;
-                    // }
                 } else {
                     category_reaction_handle.delete(&context).await.unwrap();
                     retries += 1;
                     continue 'retry;
                 };
 
+                let user = msg.author.name.clone();
                 let mut reply_handle = msg.reply(&context, String::from("...")).await.unwrap();
                 let edit_index = EDIT_INDEX.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
@@ -179,7 +177,163 @@ impl EventHandler for Handler {
         }
     }
 
+    async fn interaction_create(&self, context: Context, interaction: Interaction) {
+        if let Interaction::ApplicationCommand(command) = interaction {
+            let endpoints = &Arc::clone(&CONFIG).endpoints;
+
+            if let Some((url, _)) = endpoints
+                .iter()
+                .filter(|(_, endpoint)| endpoint.id.to_lowercase() == command.data.name)
+                .next()
+            {
+                // wtf
+                let input = command
+                    .data
+                    .options
+                    .iter()
+                    .filter(|o| o.name == "message")
+                    .next()
+                    .unwrap()
+                    .value
+                    .as_ref()
+                    .unwrap()
+                    .as_str()
+                    .unwrap()
+                    .to_string();
+                let response = reqwest::Client::new()
+                    .get(format!("http://{}{url}", var("API_URL").unwrap()))
+                    .json(&ChatBody {
+                        message: input.clone(),
+                        user: command.member.clone().unwrap().user.name,
+                    })
+                    .send()
+                    .await
+                    .unwrap();
+
+                let stream = response.json_nl_stream::<String>(1024);
+                let edit_index = EDIT_INDEX.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+                let header = format!(
+                    "**{}**: *{}*\n\n",
+                    command.member.clone().unwrap().user.name,
+                    input
+                );
+
+                command
+                    .create_interaction_response(&context.http, |response| {
+                        response
+                            .kind(InteractionResponseType::ChannelMessageWithSource)
+                            .interaction_response_data(|message| {
+                                message
+                                    .content(header.clone())
+                                    .flags(MessageFlags::SUPPRESS_EMBEDS)
+                            })
+                    })
+                    .await
+                    .unwrap();
+
+                {
+                    let mut msg_contents = unsafe { EDIT_MAP.entry(edit_index).or_default() }
+                        .lock()
+                        .unwrap();
+                    *msg_contents = header;
+                }
+
+                stream
+                    .for_each(|content| async {
+                        if let Ok(content) = content {
+                            let msg_contents = unsafe { EDIT_MAP.entry(edit_index).or_default() };
+
+                            {
+                                let mut msg_contents = msg_contents.lock().unwrap();
+                                msg_contents.push_str(&content);
+                            }
+
+                            command
+                                .edit_original_interaction_response(&context.http, |response| {
+                                    response.content(msg_contents.lock().unwrap())
+                                })
+                                .await
+                                .unwrap();
+                        }
+                    })
+                    .await;
+
+                {
+                    let msg_contents = unsafe { EDIT_MAP.remove(&edit_index).unwrap() };
+                    let m = Arc::try_unwrap(msg_contents).unwrap().into_inner().unwrap();
+
+                    info!(
+                        "POST http://{}/history user={}",
+                        var("API_URL").unwrap(),
+                        command.member.clone().unwrap().user.name
+                    );
+                    reqwest::Client::new()
+                        .post(format!("http://{}/history", var("API_URL").unwrap()))
+                        .json(&HistoryBody {
+                            message: m,
+                            user: command.member.clone().unwrap().user.name,
+                        })
+                        .send()
+                        .await
+                        .unwrap();
+                }
+            } else if command.data.name == "help" {
+                command
+                    .create_interaction_response(&context.http, |response| {
+                        response
+                            .kind(InteractionResponseType::ChannelMessageWithSource)
+                            .interaction_response_data(|message| {
+                                message
+                                    .embed(|mut embed| {
+                                        embed = embed
+                                            .title("Commands")
+                                            .color(0x00ff00)
+                                            .description("Chad is an extendable AGI (Artificial Generalized Intelligence) service and chatbot. Each command takes a single argument, `message`, which is the input message that Chad will respond to.")
+                                            .field("**@Chad**", "Automatically infers your request and relays it to the appropriate endpoint.", false);
+
+                                        for (_, endpoint) in endpoints {
+                                            embed = embed.field(format!("/{}", endpoint.id.to_lowercase()), &endpoint.designation, false);
+                                        }
+
+                                        embed
+                                    })
+                            })
+                    })
+                    .await
+                    .unwrap();
+            }
+        }
+    }
+
     async fn ready(&self, context: Context, ready: Ready) {
+        let endpoints = CONFIG.endpoints.clone();
+
+        for (_, endpoint) in &endpoints {
+            Command::create_global_application_command(&context.http, |command| {
+                command
+                    .name(endpoint.id.to_lowercase())
+                    .description(endpoint.designation.clone())
+                    .create_option(|option| {
+                        option
+                            .name("message")
+                            .description("The message to relay")
+                            .kind(CommandOptionType::String)
+                            .required(true)
+                    })
+            })
+            .await
+            .unwrap();
+        }
+
+        Command::create_global_application_command(&context.http, |command| {
+            command
+                .name("help")
+                .description("Show a full list of features")
+        })
+        .await
+        .unwrap();
+
         context
             .set_activity(Activity::watching("for mentions"))
             .await;

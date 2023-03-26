@@ -999,6 +999,7 @@ checksum = "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399"
 dependencies = [
  "autocfg",
  "hashbrown",
+ "serde",
 ]
 
 [[package]]
@@ -1107,6 +1108,12 @@ checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
 dependencies = [
  "cfg-if",
 ]
+
+[[package]]
+name = "map-macro"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48c9bebaac229c11635ec320295a7c70b5257343aa9105e80713d86db9faf35f"
 
 [[package]]
 name = "matchers"
@@ -1308,6 +1315,8 @@ dependencies = [
  "eyre",
  "futures",
  "futures-util",
+ "indexmap",
+ "map-macro",
  "minijinja",
  "once_cell",
  "openchad-schemas",
@@ -1327,6 +1336,7 @@ name = "openchad-schemas"
 version = "0.1.0"
 dependencies = [
  "architectury",
+ "indexmap",
  "schemars",
  "serde",
  "serde_json",
@@ -1774,6 +1784,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "02c613288622e5f0c3fdc5dbd4db1c5fbe752746b1d1a56a0630b78fd00de44f"
 dependencies = [
  "dyn-clone",
+ "indexmap",
  "schemars_derive",
  "serde",
  "serde_json",

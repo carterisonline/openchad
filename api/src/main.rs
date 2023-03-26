@@ -2,7 +2,6 @@
 
 mod botconfig;
 mod chat;
-mod search;
 
 use std::env::var;
 use std::net::SocketAddr;
@@ -65,7 +64,7 @@ async fn main() -> Result<()> {
     )?
     .layer(Extension(pool));
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 1381));
+    let addr = var("API_URL")?.parse::<SocketAddr>()?;
     debug!("listening on {}", addr);
 
     axum::Server::bind(&addr)
@@ -96,11 +95,12 @@ fn internal_error_string(err: Report) -> (StatusCode, String) {
     (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
 }
 
-async fn get_full_history(
+async fn get_history(
+    query: &'static str,
     pool: &SqlitePool,
     user: &str,
 ) -> Result<Vec<ChatMessage>, (StatusCode, String)> {
-    Ok(sqlx::query(include_str!("../sql/ChatHistoryFull.sql"))
+    Ok(sqlx::query(query)
         .bind(user)
         .fetch_all(pool)
         .await
