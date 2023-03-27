@@ -5,37 +5,37 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import { qwikNxVite } from 'qwik-nx/plugins';
 
 export default defineConfig({
-  cacheDir: '../../node_modules/.vite/apps/openchad-portal',
-  plugins: [
-    qwikNxVite(),
-    qwikCity(),
-    qwikVite({
-      client: {
-        outDir: '../../dist/apps/openchad-portal/client',
-      },
-      ssr: {
-        outDir: '../../dist/apps/openchad-portal/server',
-      },
-    }),
-    tsconfigPaths({ root: '../../' }),
-  ],
-  server: {
-    fs: {
-      // Allow serving files from the project root
-      allow: ['../../'],
-    },
-  },
-  preview: {
-    headers: {
-      'Cache-Control': 'public, max-age=600',
-    },
-  },
-  test: {
-    globals: true,
-    cache: {
-      dir: '../../node_modules/.vitest',
-    },
-    environment: 'node',
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-  },
+	cacheDir: '../../node_modules/.vite/apps/openchad-portal',
+	plugins: [
+		qwikNxVite(),
+		qwikCity(),
+		qwikVite({
+			client: {
+				outDir: '../../dist/apps/openchad-portal/client',
+			},
+			ssr: {
+				outDir: '../../dist/apps/openchad-portal/server',
+			},
+		}),
+		tsconfigPaths({ root: '../../' }),
+	],
+	server: {
+		fs: {
+			// Allow serving files from the project root
+			allow: ['../../'],
+		},
+	},
+	preview: {
+		headers: {
+			'Cache-Control': 'public, max-age=600',
+		},
+	},
+	test: {
+		globals: true,
+		cache: {
+			dir: '../../node_modules/.vitest',
+		},
+		environment: 'node',
+		include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+	},
 });
