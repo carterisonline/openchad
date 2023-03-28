@@ -8,10 +8,11 @@ use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use architectury::coreutils::redirect;
 use architectury::log::Report;
 use architectury::prelude::*;
 use axum::http::StatusCode;
-use axum::routing::post;
+use axum::routing::{get, post};
 use axum::{Extension, Json, Router};
 use eyre::Context;
 use once_cell::sync::Lazy;
@@ -58,7 +59,10 @@ async fn main() -> Result<()> {
     let config_json = Arc::new(serde_json::to_value(config.as_ref())?);
 
     let app = create_routes(
-        Router::new().route("/history", post(history)),
+        Router::new()
+            .route("/history", post(history))
+            .route("/config", get(get_config))
+            .route("/config", post(update_config)),
         &CONFIG,
         config_json.clone(),
     )?
@@ -89,6 +93,18 @@ async fn history(
     .await?;
 
     Ok(StatusCode::OK)
+}
+
+async fn get_config() -> Json<BotConfig> {
+    Json(CONFIG.as_ref().clone())
+}
+
+async fn update_config(Json(config): Json<BotConfig>) {
+    redirect(
+        var("CONFIG_PATH").unwrap(),
+        serde_json::to_string(&config).unwrap(),
+    )
+    .unwrap();
 }
 
 fn internal_error_string(err: Report) -> (StatusCode, String) {

@@ -1,0 +1,7 @@
+#prompt-editor {
+	border: 1px solid #374956;
+	border-radius: 5px;
+	min-height: 120px;
+	padding: 5px 0px;
+	visibility: hidden;
+}

@@ -8,6 +8,7 @@
 			"executor": "qwik-nx:build",
 			"options": {
 				"runSequence": [
+					"openchad-portal:update-schema",
 					"openchad-portal:build.client",
 					"openchad-portal:build.ssr"
 				],
@@ -46,7 +47,9 @@
 		},
 		"test": {
 			"executor": "@nrwl/vite:test",
-			"outputs": ["../../coverage/apps/openchad-portal"],
+			"outputs": [
+				"../../coverage/apps/openchad-portal"
+			],
 			"options": {
 				"passWithNoTests": true,
 				"reportsDirectory": "../../coverage/apps/openchad-portal"
@@ -69,11 +72,19 @@
 		},
 		"lint": {
 			"executor": "@nrwl/linter:eslint",
-			"outputs": ["{options.outputFile}"],
+			"outputs": [
+				"{options.outputFile}"
+			],
 			"options": {
 				"lintFilePatterns": [
 					"apps/openchad-portal/**/*.{ts,tsx,js,jsx}"
 				]
+			}
+		},
+		"update-schema": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "json2ts bot.schema.json apps/openchad-portal/src/types/bot-config.ts"
 			}
 		}
 	},

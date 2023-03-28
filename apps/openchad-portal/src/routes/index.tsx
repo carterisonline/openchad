@@ -1,153 +1,69 @@
-import { component$ } from '@builder.io/qwik';
-import type { DocumentHead } from '@builder.io/qwik-city';
-import { Link } from '@builder.io/qwik-city';
+import { component$, Signal, useStore } from '@builder.io/qwik';
+import { DocumentHead, routeLoader$ } from '@builder.io/qwik-city';
+import FunctionEditor from '../components/function-editor';
+import FunctionSelect from '../components/function-select';
+import { BotConfig } from '../types/bot-config';
+
+export const useGetConfig = routeLoader$(async () => {
+	const apiUrl = process.env['API_URL'];
+	if (!apiUrl) {
+		throw new Error('API_URL not set');
+	}
+
+	const url = `http://${apiUrl}/config`;
+	try {
+		const response = await fetch(url);
+		const config: BotConfig = await response.json();
+		return config;
+	} catch (e) {
+		throw new Error(`Failed to fetch config: ${e}`);
+	}
+});
+
+export interface EditorStore {
+	currentFunction: string | null;
+	currentFunctionType: string | null | undefined;
+}
+
+export interface EditorProps {
+	editorStore: EditorStore;
+	config: Readonly<Signal<BotConfig>>;
+}
 
 export default component$(() => {
-	return (
-		<div>
-			<h1>
-				Welcome openchad-portal <span class="lightning">⚡️</span>
-			</h1>
+	try {
+		const config = useGetConfig();
 
-			<ul>
-				<li>
-					Check out the <code>src/routes</code> directory to get
-					started.
-				</li>
-				<li>
-					Add integrations with <code>npm run qwik add</code>.
-				</li>
-				<li>
-					More info about development in <code>README.md</code>
-				</li>
-			</ul>
+		const editorStore: EditorStore = useStore({
+			currentFunction: null,
+			currentFunctionType: null,
+		});
 
-			<h2>Commands</h2>
-
-			<table class="commands">
-				<tbody>
-					<tr>
-						<td>
-							<code>npm run dev</code>
-						</td>
-						<td>Start the dev server and watch for changes.</td>
-					</tr>
-					<tr>
-						<td>
-							<code>npm run preview</code>
-						</td>
-						<td>Production build and start preview server.</td>
-					</tr>
-					<tr>
-						<td>
-							<code>npm run build</code>
-						</td>
-						<td>Production build.</td>
-					</tr>
-					<tr>
-						<td>
-							<code>npm run qwik add</code>
-						</td>
-						<td>Select an integration to add.</td>
-					</tr>
-				</tbody>
-			</table>
-
-			<h2>Add Integrations</h2>
-
-			<table class="commands">
-				<tbody>
-					<tr>
-						<td>
-							<code>npm run qwik add cloudflare-pages</code>
-						</td>
-						<td>
-							<a
-								href="https://developers.cloudflare.com/pages"
-								target="_blank"
-							>
-								Cloudflare Pages Server
-							</a>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<code>npm run qwik add express</code>
-						</td>
-						<td>
-							<a href="https://expressjs.com/" target="_blank">
-								Nodejs Express Server
-							</a>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<code>npm run qwik add netlify-edge</code>
-						</td>
-						<td>
-							<a href="https://docs.netlify.com/" target="_blank">
-								Netlify Edge Functions
-							</a>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<code>npm run qwik add static</code>
-						</td>
-						<td>
-							<a
-								href="https://qwik.builder.io/qwikcity/static-site-generation/overview/"
-								target="_blank"
-							>
-								Static Site Generation (SSG)
-							</a>
-						</td>
-					</tr>
-				</tbody>
-			</table>
-
-			<h2>Community</h2>
-
-			<ul>
-				<li>
-					<span>Questions or just want to say hi? </span>
-					<a href="https://qwik.builder.io/chat" target="_blank">
-						Chat on discord!
-					</a>
-				</li>
-				<li>
-					<span>Follow </span>
-					<a href="https://twitter.com/QwikDev" target="_blank">
-						@QwikDev
-					</a>
-					<span> on Twitter</span>
-				</li>
-				<li>
-					<span>Open issues and contribute on </span>
-					<a href="https://github.com/BuilderIO/qwik" target="_blank">
-						GitHub
-					</a>
-				</li>
-				<li>
-					<span>Watch </span>
-					<a href="https://qwik.builder.io/media/" target="_blank">
-						Presentations, Podcasts, Videos, etc.
-					</a>
-				</li>
-			</ul>
-			<Link class="mindblow" href="/flower/">
-				Blow my mind 🤯
-			</Link>
-		</div>
-	);
+		return (
+			<section class="grid">
+				<aside>
+					<h2>Select a Function</h2>
+					<FunctionSelect editorStore={editorStore} config={config} />
+				</aside>
+				<FunctionEditor editorStore={editorStore} config={config} />
+			</section>
+		);
+	} catch (e) {
+		console.error(e);
+		return (
+			<section class="grid">
+				<aside role="alert">Failed to load config</aside>
+			</section>
+		);
+	}
 });
 
 export const head: DocumentHead = {
-	title: 'Welcome to Qwik',
+	title: 'OpenChad Configuration',
 	meta: [
 		{
 			name: 'description',
-			content: 'Qwik site description',
+			content: 'Configure the OpenChad API',
 		},
 	],
 };
